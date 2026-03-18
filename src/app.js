@@ -112,14 +112,46 @@
      3. CKAN API CLIENT
      ================================================================ */
 
+  // Whether to route requests through the server-side CORS proxy.
+  // Auto-detected on first request: if direct fetch fails with a network error
+  // (CORS block), subsequent requests use the proxy.
+  let useProxy = false;
+
   function authHeaders(username, password) {
     const h = {};
     if (username) h["Authorization"] = "Basic " + btoa(username + ":" + password);
     return h;
   }
 
+  /**
+   * Make a fetch request, falling back to the CORS proxy if direct fails.
+   * The proxy routes through /proxy/api/action/... with X-CKAN-Target header.
+   */
+  async function ckanFetch(baseUrl, path, options) {
+    if (!useProxy) {
+      try {
+        const resp = await fetch(`${baseUrl}${path}`, options);
+        return resp;
+      } catch (e) {
+        // Network error = likely CORS block. Switch to proxy for all future requests.
+        if (e.name === "TypeError" && e.message.includes("Failed to fetch")) {
+          console.log("CORS blocked, switching to proxy mode");
+          useProxy = true;
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    // Proxy mode: route through our nginx CORS proxy at /proxy/...
+    const proxyHeaders = { ...(options.headers || {}) };
+    proxyHeaders["X-CKAN-Target"] = baseUrl;
+    const proxyOpts = { ...options, headers: proxyHeaders };
+    return fetch(`${window.location.origin}/proxy${path}`, proxyOpts);
+  }
+
   async function ckanGet(baseUrl, path, headers) {
-    const resp = await fetch(`${baseUrl}${path}`, { headers });
+    const resp = await ckanFetch(baseUrl, path, { headers });
     if (!resp.ok) return null;
     const data = await resp.json();
     return data.success ? data.result : null;
@@ -127,7 +159,7 @@
 
   async function ckanSql(baseUrl, sql, headers) {
     try {
-      const resp = await fetch(`${baseUrl}/api/action/datastore_search_sql`, {
+      const resp = await ckanFetch(baseUrl, "/api/action/datastore_search_sql", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({ sql })
@@ -472,7 +504,7 @@
    * - Converts filter_* params into CKAN filters JSON
    * - Injects Basic Auth header if credentials are set
    */
-  function makeRequestInterceptor(resourceId, username, password) {
+  function makeRequestInterceptor(resourceId, baseUrl, username, password) {
     return (req) => {
       // Inject auth
       if (username) {
@@ -503,6 +535,13 @@
         }
 
         req.url = u.toString();
+      }
+
+      // Route through CORS proxy if needed
+      if (useProxy && req.url.startsWith(baseUrl)) {
+        const apiPath = req.url.substring(baseUrl.length);
+        req.headers["X-CKAN-Target"] = baseUrl;
+        req.url = `${window.location.origin}/proxy${apiPath}`;
       }
 
       return req;
@@ -547,21 +586,26 @@
     $("#btn-explore").disabled = true;
 
     try {
-      // Test connectivity first
-      const testResp = await fetch(`${parsed.baseUrl}/api/action/datastore_search?resource_id=${encodeURIComponent(parsed.resourceId)}&limit=0`, {
-        headers: authHeaders(username, password)
-      });
+      // Test connectivity (auto-detects CORS block and switches to proxy)
+      useProxy = false; // Reset proxy mode for each new exploration
+      const testResp = await ckanFetch(
+        parsed.baseUrl,
+        `/api/action/datastore_search?resource_id=${encodeURIComponent(parsed.resourceId)}&limit=0`,
+        { headers: authHeaders(username, password) }
+      );
 
       if (!testResp.ok) {
         if (testResp.status === 401 || testResp.status === 403) {
           setStatus("Authentication required. Enter credentials and try again.", "error");
-        } else if (testResp.status === 0) {
-          setStatus("CORS blocked. The CKAN instance needs to allow requests from this domain. See the integration guide below.", "error");
         } else {
           setStatus(`CKAN API returned HTTP ${testResp.status}. Check the URL and try again.`, "error");
         }
         $("#btn-explore").disabled = false;
         return;
+      }
+
+      if (useProxy) {
+        console.log("Using CORS proxy for this CKAN instance");
       }
 
       const introspection = await deepIntrospect(
@@ -594,7 +638,7 @@
         tryItOutEnabled: true,
         docExpansion: "list",
         defaultModelsExpandDepth: 0,
-        requestInterceptor: makeRequestInterceptor(parsed.resourceId, username, password)
+        requestInterceptor: makeRequestInterceptor(parsed.resourceId, parsed.baseUrl, username, password)
       });
 
     } catch (err) {

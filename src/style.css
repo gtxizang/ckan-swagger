@@ -220,16 +220,16 @@ html, body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  background: #e94560;
+  background: #16a34a;
   color: #fff;
   margin-top: 16px;
   transition: all 0.15s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #d63851;
+  background: #15803d;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
 }
 
 .btn-primary:disabled {
