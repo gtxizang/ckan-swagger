@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CKAN Swagger UX</title>
+  <link rel="stylesheet" href="vendor/swagger-ui.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Landing page -->
+  <div id="landing">
+    <div class="landing-container">
+      <header class="landing-header">
+        <h1>CKAN Swagger UX</h1>
+        <p class="subtitle">Interactive API explorer for any CKAN DataStore resource</p>
+      </header>
+
+      <div class="input-section">
+        <label for="ckan-url">CKAN Resource URL</label>
+        <input type="url" id="ckan-url"
+               placeholder="https://data.gov.ie/dataset/example/resource/2bb017bc-..."
+               autocomplete="url"
+               spellcheck="false">
+        <p class="input-hint">Paste any CKAN resource page URL. The DataStore API will be introspected automatically.</p>
+
+        <div class="auth-section">
+          <details>
+            <summary>Authentication (optional)</summary>
+            <div class="auth-fields">
+              <div class="field-row">
+                <div class="field">
+                  <label for="username">Username</label>
+                  <input type="text" id="username" placeholder="Basic Auth username" autocomplete="username">
+                </div>
+                <div class="field">
+                  <label for="password">Password</label>
+                  <input type="password" id="password" placeholder="Basic Auth password" autocomplete="current-password">
+                </div>
+              </div>
+              <p class="auth-hint">Credentials are sent directly to the CKAN instance via Basic Auth headers. They are never stored or transmitted to this service.</p>
+            </div>
+          </details>
+        </div>
+
+        <div id="target-info" class="target-info hidden">
+          <span class="target-label">Target:</span>
+          <span id="target-domain" class="target-domain"></span>
+        </div>
+
+        <div id="status-message" class="status-message"></div>
+
+        <button id="btn-explore" class="btn-primary">Explore API</button>
+      </div>
+
+      <div class="guide-section">
+        <h2>Integration Guide</h2>
+        <p>Add a link to your CKAN resource template to launch the explorer directly:</p>
+
+        <h3>1. Link from your CKAN instance</h3>
+        <pre><code>&lt;a href="https://ckan-swagger.regexflow.com/?url=https://your-ckan.org/dataset/{{ pkg.name }}/resource/{{ res.id }}"
+   target="_blank" rel="noopener"&gt;
+  API Explorer
+&lt;/a&gt;</code></pre>
+
+        <h3>2. CORS Configuration</h3>
+        <p>Your CKAN instance must allow cross-origin requests from this domain. Add to your <code>ckan.ini</code>:</p>
+        <pre><code># Option A: Allow all origins (common for public data portals)
+ckan.cors.origin_allow_all = true
+
+# Option B: Allow specific origins
+ckan.cors.origin_whitelist = https://ckan-swagger.regexflow.com</code></pre>
+
+        <h3>3. Embed as an iframe (optional)</h3>
+        <pre><code>&lt;iframe src="https://ckan-swagger.regexflow.com/?url=https://your-ckan.org/dataset/name/resource/uuid"
+        width="100%" height="800" frameborder="0"&gt;&lt;/iframe&gt;</code></pre>
+      </div>
+
+      <footer class="landing-footer">
+        <p>Built by <a href="https://regexflow.com" target="_blank" rel="noopener">RegexFlow</a></p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Explorer view (Swagger UI) -->
+  <div id="explorer" class="hidden">
+    <div class="explorer-header">
+      <button id="btn-back" class="btn-back" title="Back to home">&larr;</button>
+      <span class="explorer-title">CKAN Swagger UX</span>
+    </div>
+    <div id="swagger-ui"></div>
+  </div>
+
+  <script src="vendor/swagger-ui-bundle.js"></script>
+  <script src="vendor/swagger-ui-standalone-preset.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
