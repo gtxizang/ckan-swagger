@@ -289,15 +289,51 @@
      5. OPENAPI SPEC GENERATOR
      ================================================================ */
 
-  // Internal fields to hide from interactive parameters (still shown in Data Dictionary).
-  const DEFAULT_HIDDEN_FIELDS = ["_id", "soda_hashbyte", "soda_identity"];
-  const HIDDEN_PARAM_FIELDS = new Set(DEFAULT_HIDDEN_FIELDS);
+  // Per-domain configuration, loaded from /config.json at startup.
+  let siteConfig = null;
+
+  async function loadConfig() {
+    try {
+      const resp = await fetch("/config.json");
+      if (resp.ok) {
+        siteConfig = await resp.json();
+      }
+    } catch (e) {
+      // Config file missing or invalid — use defaults
+    }
+  }
+
+  /**
+   * Returns the set of hidden fields for a given CKAN domain.
+   * Falls back to config.default, then to ["_id"].
+   */
+  function getHiddenFields(ckanBaseUrl) {
+    const fallback = ["_id"];
+    if (!siteConfig) return new Set(fallback);
+
+    try {
+      const hostname = new URL(ckanBaseUrl).hostname;
+      const domainConfig = siteConfig.domains && siteConfig.domains[hostname];
+      if (domainConfig && Array.isArray(domainConfig.hiddenFields)) {
+        return new Set(domainConfig.hiddenFields);
+      }
+    } catch (e) {
+      // Invalid URL — use default
+    }
+
+    if (siteConfig.default && Array.isArray(siteConfig.default.hiddenFields)) {
+      return new Set(siteConfig.default.hiddenFields);
+    }
+
+    return new Set(fallback);
+  }
 
   function buildOpenApiSpec(resourceId, baseUrl, datasetName, introspection) {
     const allFields = (introspection && introspection.fields) || [];
     const totalRecords = (introspection && introspection.totalRecords) || 0;
 
-    const userFields = allFields.filter(f => !HIDDEN_PARAM_FIELDS.has(f.id));
+    const hiddenFields = getHiddenFields(baseUrl);
+    const userFields = allFields.filter(f => !hiddenFields.has(f.id));
     const fieldNames = userFields.map(f => f.id);
 
     const enumFields = userFields.filter(f => f.isEnum && f.enumValues && f.enumValues.length > 1);
@@ -655,7 +691,10 @@
      8. INITIALISATION
      ================================================================ */
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Load per-domain config (hidden fields, etc.)
+    await loadConfig();
+
     const urlInput = $("#ckan-url");
     const usernameInput = $("#username");
     const passwordInput = $("#password");

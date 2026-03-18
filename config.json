@@ -1,0 +1,13 @@
+{
+  "domains": {
+    "data-test.svk.se": {
+      "hiddenFields": ["_id", "soda_hashbyte", "soda_identity"]
+    },
+    "data.gov.ie": {
+      "hiddenFields": ["_id"]
+    }
+  },
+  "default": {
+    "hiddenFields": ["_id"]
+  }
+}
