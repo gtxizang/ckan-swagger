@@ -64,13 +64,14 @@
   API Explorer
 &lt;/a&gt;</code></pre>
 
-        <h3>2. CORS Configuration</h3>
-        <p>Your CKAN instance must allow cross-origin requests from this domain. Add to your <code>ckan.ini</code>:</p>
+        <h3>2. CORS Configuration (optional, recommended)</h3>
+        <p>The explorer works out of the box via a built-in proxy. For best performance, you can optionally allow direct browser requests by adding to your <code>ckan.ini</code>:</p>
         <pre><code># Option A: Allow all origins (common for public data portals)
 ckan.cors.origin_allow_all = true
 
 # Option B: Allow specific origins
 ckan.cors.origin_whitelist = https://ckan-swagger.regexflow.com</code></pre>
+        <p>Without this, requests route through our CORS proxy automatically — fully functional, just slightly slower.</p>
 
         <h3>3. Embed as an iframe (optional)</h3>
         <pre><code>&lt;iframe src="https://ckan-swagger.regexflow.com/?url=https://your-ckan.org/dataset/name/resource/uuid"
