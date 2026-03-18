@@ -441,7 +441,7 @@
 
     // --- The spec ---
     return {
-      openapi: "3.0.3",
+      openapi: "3.1.0",
       info: {
         title: safeDatasetName,
         description: infoDesc,

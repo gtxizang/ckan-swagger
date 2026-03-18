@@ -292,6 +292,38 @@ html, body {
   color: #3730a3;
 }
 
+.guide-section ul {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.8;
+  margin: 0 0 8px 20px;
+}
+
+.guide-section ul code {
+  background: #eef2ff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12.5px;
+  color: #3730a3;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.guide-section details {
+  border: none;
+}
+
+.guide-section details summary {
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+  list-style: disclosure-closed;
+}
+
+.guide-section details[open] summary {
+  list-style: disclosure-open;
+  margin-bottom: 4px;
+}
+
 /* ── Footer ──────────────────────────────────── */
 
 .landing-footer {

@@ -78,6 +78,42 @@ ckan.cors.origin_whitelist = https://ckan-swagger.regexflow.com</code></pre>
         width="100%" height="800" frameborder="0"&gt;&lt;/iframe&gt;</code></pre>
       </div>
 
+      <div class="guide-section">
+        <details>
+          <summary><h2 style="display:inline; font-size:18px;">About CKAN Swagger UX</h2></summary>
+
+          <p style="margin-top:14px;">CKAN Swagger UX is a lightweight, open-source tool that dynamically generates interactive API documentation for any CKAN DataStore resource. Each session introspects the live schema, so changes to fields, types, or data are reflected immediately.</p>
+
+          <h3>How it works</h3>
+          <ul>
+            <li>Paste a CKAN resource URL or link directly via query parameter</li>
+            <li>The tool calls the DataStore API to discover the schema — field names, types, enums, and value ranges</li>
+            <li>An OpenAPI 3.1 specification is generated on-the-fly with typed parameters, enum dropdowns, and range hints</li>
+            <li>Users can execute queries directly from the browser — no code required</li>
+          </ul>
+
+          <h3>Architecture</h3>
+          <ul>
+            <li>Static HTML/JS served from an nginx container (~2MB image)</li>
+            <li>No server-side code, no database, no state</li>
+            <li>A minimal CORS proxy routes only two DataStore endpoints (<code>datastore_search</code> and <code>datastore_search_sql</code>) — all other paths are blocked</li>
+            <li>Per-domain configuration via a JSON config file — editable without rebuilding</li>
+            <li>Internal or system fields (e.g. <code>_id</code>, <code>soda_hashbyte</code>) can be hidden per domain, keeping the API explorer clean for end users</li>
+          </ul>
+
+          <h3>Security measures</h3>
+          <ul>
+            <li>All CKAN-derived content is sanitised before rendering (XSS prevention)</li>
+            <li>SQL identifiers are escaped using PostgreSQL double-quote rules (injection prevention)</li>
+            <li>URLs validated: HTTPS-only, private IP ranges rejected, no embedded credentials accepted</li>
+            <li>Content Security Policy, X-Content-Type-Options, and X-Frame-Options headers on all responses</li>
+            <li>Container runs as a non-root user</li>
+            <li>Credentials are sent directly to the CKAN instance via Basic Auth — never stored or transmitted to this service</li>
+            <li>CORS proxy restricted to two specific API paths; target must be HTTPS</li>
+          </ul>
+        </details>
+      </div>
+
       <footer class="landing-footer">
         <p>Built by <a href="https://regexflow.com" target="_blank" rel="noopener">RegexFlow</a></p>
       </footer>
