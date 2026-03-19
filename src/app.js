@@ -134,7 +134,8 @@
         return resp;
       } catch (e) {
         // Network error = likely CORS block. Switch to proxy for all future requests.
-        if (e.name === "TypeError" && e.message.includes("Failed to fetch")) {
+        // Chrome: "Failed to fetch", Safari: "Load failed", Firefox: "NetworkError..."
+        if (e.name === "TypeError") {
           console.log("CORS blocked, switching to proxy mode");
           useProxy = true;
         } else {
@@ -632,7 +633,10 @@
 
       if (!testResp.ok) {
         if (testResp.status === 401 || testResp.status === 403) {
-          setStatus("Authentication required. Enter credentials and try again.", "error");
+          setStatus("Authentication required. Enter credentials below and try again.", "error");
+          // Expand the auth section so the user sees the credential fields
+          var authDetails = document.querySelector(".auth-section details");
+          if (authDetails) authDetails.open = true;
         } else {
           setStatus(`CKAN API returned HTTP ${testResp.status}. Check the URL and try again.`, "error");
         }
@@ -678,8 +682,8 @@
       });
 
     } catch (err) {
-      if (err.name === "TypeError" && err.message.includes("Failed to fetch")) {
-        setStatus("Network error \u2014 likely a CORS block. The CKAN instance needs to allow requests from this domain.", "error");
+      if (err.name === "TypeError") {
+        setStatus("Network error \u2014 could not reach the CKAN instance. It may need to allow requests from this domain (CORS).", "error");
       } else {
         setStatus("Error: " + err.message, "error");
       }
